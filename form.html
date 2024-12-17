@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Điền Thông Tin Khách Hàng</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+        }
+
+        h2 {
+            text-align: center;
+            margin-top: 20px;
+            color: #333;
+        }
+
+        form {
+            background-color: #fff;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            max-width: 500px;
+            margin: 20px auto;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        /* Responsive layout */
+        @media (max-width: 768px) {
+            form {
+                padding: 15px;
+                margin: 10px;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+
+            input, select {
+                font-size: 14px;
+                padding: 8px;
+            }
+
+            button {
+                font-size: 14px;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h2>Thông Tin Khách Hàng</h2>
+    <form id="customerForm">
+        <!-- Tên người nhận -->
+        <label for="tenNguoiNhan">Tên người nhận:</label>
+        <input type="text" id="tenNguoiNhan" name="tenNguoiNhan" placeholder="Nhập tên người nhận" required>
+
+        <!-- Số điện thoại -->
+        <label for="soDienThoai">Số điện thoại người nhận:</label>
+        <input type="tel" id="soDienThoai" name="soDienThoai" placeholder="Nhập số điện thoại" pattern="[0-9]{10}" required>
+
+        <!-- Địa chỉ cụ thể -->
+        <label for="tinh">Tỉnh/Thành phố:</label>
+        <select id="tinh" name="tinh" required>
+            <option value="">Chọn Tỉnh/Thành phố</option>
+        </select>
+
+        <label for="huyen">Quận/Huyện:</label>
+        <select id="huyen" name="huyen" required>
+            <option value="">Chọn Quận/Huyện</option>
+        </select>
+
+        <label for="xa">Phường/Xã:</label>
+        <select id="xa" name="xa" required>
+            <option value="">Chọn Phường/Xã</option>
+        </select>
+
+        <!-- Địa chỉ nhà -->
+        <label for="diaChiNha">Địa chỉ nhà:</label>
+        <input type="text" id="diaChiNha" name="diaChiNha" placeholder="Nhập số nhà, tên đường..." required>
+
+        <label for="donHang">Đơn hàng:</label>
+        <input type="text" id="donHang" name="donHang" placeholder="Nhập đơn hàng muốn đặt..." required>
+
+        <!-- Submit -->
+        <button type="submit">Gửi Thông Tin</button>
+    </form>
+
+    <script>
+        const tinhSelect = document.getElementById("tinh");
+        const huyenSelect = document.getElementById("huyen");
+        const xaSelect = document.getElementById("xa");
+
+        // Hàm lấy danh sách tỉnh/thành phố
+        async function getProvinces() {
+            const res = await fetch("https://provinces.open-api.vn/api/p/");
+            const data = await res.json();
+            data.forEach(province => {
+                const option = document.createElement("option");
+                option.value = province.code;
+                option.textContent = province.name;
+                tinhSelect.appendChild(option);
+            });
+        }
+
+        // Hàm lấy danh sách quận/huyện dựa trên tỉnh được chọn
+        async function getDistricts(provinceCode) {
+            huyenSelect.innerHTML = "<option value=''>Chọn Quận/Huyện</option>";
+            xaSelect.innerHTML = "<option value=''>Chọn Phường/Xã</option>";
+
+            const res = await fetch(`https://provinces.open-api.vn/api/p/${provinceCode}?depth=2`);
+            const data = await res.json();
+            data.districts.forEach(district => {
+                const option = document.createElement("option");
+                option.value = district.code;
+                option.textContent = district.name;
+                huyenSelect.appendChild(option);
+            });
+        }
+
+        // Hàm lấy danh sách phường/xã dựa trên quận/huyện được chọn
+        async function getWards(districtCode) {
+            xaSelect.innerHTML = "<option value=''>Chọn Phường/Xã</option>";
+
+            const res = await fetch(`https://provinces.open-api.vn/api/d/${districtCode}?depth=2`);
+            const data = await res.json();
+            data.wards.forEach(ward => {
+                const option = document.createElement("option");
+                option.value = ward.code;
+                option.textContent = ward.name;
+                xaSelect.appendChild(option);
+            });
+        }
+
+        // Event listener khi chọn tỉnh/thành phố
+        tinhSelect.addEventListener("change", () => {
+            const provinceCode = tinhSelect.value;
+            if (provinceCode) getDistricts(provinceCode);
+        });
+
+        // Event listener khi chọn quận/huyện
+        huyenSelect.addEventListener("change", () => {
+            const districtCode = huyenSelect.value;
+            if (districtCode) getWards(districtCode);
+        });
+
+        // Gửi dữ liệu lên server
+        document.getElementById("customerForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const formData = {
+                tenNguoiNhan: document.getElementById("tenNguoiNhan").value,
+                soDienThoai: document.getElementById("soDienThoai").value,
+                tinh: tinhSelect.options[tinhSelect.selectedIndex].text,
+                huyen: huyenSelect.options[huyenSelect.selectedIndex].text,
+                xa: xaSelect.options[xaSelect.selectedIndex].text,
+                diaChiNha: document.getElementById("diaChiNha").value,
+                donHang: document.getElementById("donHang").value
+            };
+
+            try {
+                const response = await fetch("http://localhost:3000/submit", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(formData),
+                });
+
+                const result = await response.text();
+               ; alert("Gửi thành công: " + result)
+            } catch (error) {
+                console.error("Lỗi khi gửi dữ liệu:", error);
+                alert("Gửi dữ liệu thất bại!");
+            }
+        });
+
+        // Load danh sách tỉnh/thành phố khi trang tải xong
+        getProvinces();
+    </script>
+</body>
+</html>
